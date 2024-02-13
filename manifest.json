@@ -1,0 +1,11 @@
+{
+  "manifest_version":2,
+  "version":"1.0",
+  "name":"ESPC Floor Area",
+  "content_scripts": [
+	  {
+		  "matches":["*://*.espc.com/*", "*://espc.com/*"],
+		  "js":["main.js"]
+	  }
+  ]
+}
