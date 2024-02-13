@@ -1,14 +1,13 @@
-main();
 
 async function main() {
 	const currentUrl = new URL(document.URL).pathname;
 
-	console.log(currentUrl);
+	console.debug(currentUrl);
 
-	const validUrls = ["/properties", "/property-for-sale"];
+	const actionUrls = ["/properties", "/property-for-sale", "/houses-for-sale", "/flats-for-sale"];
 
-	if (!validUrls.some((url) => currentUrl.startsWith(url))) {
-		console.log("No action required");
+	if (!actionUrls.some((url) => currentUrl.startsWith(url))) {
+		console.debug("No action required");
 		return;
 	}
 
@@ -26,34 +25,65 @@ async function main() {
 async function updatePropertiesWithFloorArea() {
 	const propertyElements = document.getElementsByClassName("propertyWrap");
 
+	const promises = [];
 	for (const element of propertyElements) {
-		const alreadyAdded = element.querySelector(".added-floor-area");
-		if (alreadyAdded) { return; }
-
-		const url = element.querySelector(".infoWrap > a")?.href;
-		if (!url) {
-			console.log("No url found");
-			continue;
-		}
-
-		const floorArea = await getFloorAreaFromPropertyPage(url);		
-
-		const infoDiv = element.getElementsByClassName("facilities")[0];
-		const newFloorAreaHtml = `<span class="opt added-floor-area">${floorArea}<span class="icon-floor_area" style="margin-left:8px"></span></span>`;
-		const floorAreaElement = createElementFromHtml(newFloorAreaHtml);
-
-		console.log("Adding floor area to element");
-		infoDiv.appendChild(floorAreaElement);
+		promises.push(updatePropertyWithFloorArea(element));
 	}
+
+	await Promise.all(promises);
+}
+
+/** Update a single property element with an icon showing floor area
+ * @param {HTMLElement} element - The property HTMLElement to update
+ */
+async function updatePropertyWithFloorArea(element) {
+	let alreadyAdded = element.querySelector(".added-floor-area");
+	if (alreadyAdded) { return; }
+
+	const url = element.querySelector(".infoWrap > a")?.href;
+	if (!url) {
+		console.debug("No url found");
+		return;
+	}
+
+	const floorArea = await getFloorAreaFromPropertyPage(new URL(url));
+	if (!floorArea) {
+		console.debug("No floor area found");
+		return;
+	}
+
+	const infoDiv = element.getElementsByClassName("facilities")[0];
+	const newFloorAreaHtml = `<span class="opt added-floor-area">${floorArea}<span class="icon-floor_area" style="margin-left:8px"></span></span>`;
+	const floorAreaElement = createElementFromHtml(newFloorAreaHtml);
+
+	alreadyAdded = element.querySelector(".added-floor-area"); // Check again in case this element is being updated by multiple threads.
+	if (alreadyAdded) { return; }
+
+	console.debug("Adding floor area to element");
+	infoDiv.appendChild(floorAreaElement);
 }
 
 /**
  * Fetches the property floor area from the given url.
- * @param {string} url - The url of the property page.
+ * @param {URL} url - The url of the property page.
  * @returns {Promise<string>}
  */
 async function getFloorAreaFromPropertyPage(url) {
-	return "50m";
+	const fromCache = sessionStorage.getItem(url.pathname);
+	if (fromCache) {
+		console.debug("Fetched floor area from cache");
+		return fromCache;
+	}
+
+	const response = await fetch(url.toString());
+	const html = await response.text();
+	const doc = new DOMParser().parseFromString(html, "text/html");
+
+	const floorAreaText = doc.querySelector(".icon-floor_area + strong")?.innerText ?? "N/A";
+
+	sessionStorage.setItem(url.pathname, floorAreaText);
+
+	return floorAreaText;
 }
 
 /**
@@ -62,7 +92,9 @@ async function getFloorAreaFromPropertyPage(url) {
  * @returns {HTMLElement}
  */
 function createElementFromHtml(htmlString) {
-	const temp = document.createElement("div");
-	temp.innerHTML = htmlString.trim();
-	return temp.firstElementChild;
+	const template = document.createElement("template");
+	template.innerHTML = htmlString.trim();
+	return template.content.firstElementChild;
 }
+
+main();
