@@ -1,4 +1,3 @@
-
 async function main() {
 	const currentUrl = new URL(document.URL).pathname;
 
