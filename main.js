@@ -1,3 +1,4 @@
+// @ts-check
 async function main() {
 	const currentUrl = new URL(document.URL).pathname;
 
@@ -13,6 +14,10 @@ async function main() {
 	await updatePropertiesWithFloorArea();
 
 	const mainElement = document.getElementById("content");
+	if (!mainElement) {
+		throw new Error("No main content element found");
+	}
+
 	const observer = new MutationObserver(async() => await updatePropertiesWithFloorArea());
 	const obsConfig = { childList: true, subtree: true };
 	observer.observe(mainElement, obsConfig);
@@ -33,13 +38,15 @@ async function updatePropertiesWithFloorArea() {
 }
 
 /** Update a single property element with an icon showing floor area
- * @param {HTMLElement} element - The property HTMLElement to update
+ * @param {Element} element - The property Element to update
  */
 async function updatePropertyWithFloorArea(element) {
 	let alreadyAdded = element.querySelector(".added-floor-area");
 	if (alreadyAdded) { return; }
 
-	const url = element.querySelector(".infoWrap > a")?.href;
+	/** @type {HTMLAnchorElement | null} */
+	const aElement = element.querySelector(".infoWrap > a");
+	const url = aElement?.href;
 	if (!url) {
 		console.debug("No url found");
 		return;
@@ -54,6 +61,10 @@ async function updatePropertyWithFloorArea(element) {
 	const infoDiv = element.getElementsByClassName("facilities")[0];
 	const newFloorAreaHtml = `<span class="opt added-floor-area">${floorArea}<span class="icon-floor_area" style="margin-left:8px"></span></span>`;
 	const floorAreaElement = createElementFromHtml(newFloorAreaHtml);
+	if (!floorAreaElement) {
+		console.warn(`Invalid html string ${newFloorAreaHtml}`);
+		return;
+	}
 
 	alreadyAdded = element.querySelector(".added-floor-area"); // Check again in case this element is being updated by multiple threads.
 	if (alreadyAdded) { return; }
@@ -78,7 +89,9 @@ async function getFloorAreaFromPropertyPage(url) {
 	const html = await response.text();
 	const doc = new DOMParser().parseFromString(html, "text/html");
 
-	const floorAreaText = doc.querySelector(".icon-floor_area + strong")?.innerText ?? "N/A";
+	/** @type {HTMLElement | null } */
+	const floorAreaElement = doc.querySelector(".icon-floor_area + strong");
+	const floorAreaText = floorAreaElement?.innerText ?? "N/A";
 
 	sessionStorage.setItem(url.pathname, floorAreaText);
 
@@ -88,7 +101,7 @@ async function getFloorAreaFromPropertyPage(url) {
 /**
  * Takes a HTML string and converts it into a HTMLElement
  * @param {string} htmlString - The HTML string to parse.
- * @returns {HTMLElement}
+ * @returns {Element | null}
  */
 function createElementFromHtml(htmlString) {
 	const template = document.createElement("template");
