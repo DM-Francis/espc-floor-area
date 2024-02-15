@@ -14,7 +14,7 @@ async function main() {
 	await updatePropertiesWithFloorArea();
 
 	const mainElement = document.getElementById("content");
-	if (!mainElement) {
+	if (mainElement == null) {
 		throw new Error("No main content element found");
 	}
 
@@ -47,7 +47,7 @@ async function updatePropertyWithFloorArea(element) {
 	/** @type {HTMLAnchorElement | null} */
 	const aElement = element.querySelector(".infoWrap > a");
 	const url = aElement?.href;
-	if (!url) {
+	if (url == null) {
 		console.debug("No url found");
 		return;
 	}
@@ -61,7 +61,7 @@ async function updatePropertyWithFloorArea(element) {
 	const infoDiv = element.getElementsByClassName("facilities")[0];
 	const newFloorAreaHtml = `<span class="opt added-floor-area">${floorArea}<span class="icon-floor_area" style="margin-left:8px"></span></span>`;
 	const floorAreaElement = createElementFromHtml(newFloorAreaHtml);
-	if (!floorAreaElement) {
+	if (floorAreaElement == null) {
 		console.warn(`Invalid html string ${newFloorAreaHtml}`);
 		return;
 	}
