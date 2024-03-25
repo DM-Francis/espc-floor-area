@@ -7,5 +7,9 @@
 		  "matches":["*://*.espc.com/*", "*://espc.com/*"],
 		  "js":["main.js"]
 	  }
-  ]
+  ],
+  "icons" : {
+	  "64": "icon64.png",
+	  "128": "icon128.png"
+  }
 }
