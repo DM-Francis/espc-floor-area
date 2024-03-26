@@ -1,5 +1,5 @@
 {
-  "manifest_version": 3,
+  "manifest_version": 2,
   "version":"1.0",
   "name":"ESPC Floor Area",
   "description": "Displays the floor area of properties on ESPC.com when viewing search results.",

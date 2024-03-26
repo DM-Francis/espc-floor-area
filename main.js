@@ -111,7 +111,8 @@ async function getFloorAreaFromPropertyPage(url) {
 	}
 
 	// Add a custom header to identify that this traffic comes from the extension
-	const response = await fetch(url, { credentials: "omit", headers: [["espc-floor-area-extension", "true"]]}); 
+	const fullUrl = new URL(url, window.location.origin);
+	const response = await fetch(fullUrl, { credentials: "omit", headers: [["espc-floor-area-extension", "true"]]}); 
 	const html = await response.text();
 	const doc = new DOMParser().parseFromString(html, "text/html");
 
