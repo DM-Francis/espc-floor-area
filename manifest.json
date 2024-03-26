@@ -2,14 +2,21 @@
   "manifest_version": 3,
   "version":"1.0",
   "name":"ESPC Floor Area",
+  "description": "Displays the floor area of properties on ESPC.com when viewing search results.",
   "content_scripts": [
 	  {
-		  "matches":["*://*.espc.com/*", "*://espc.com/*"],
+		  "matches":["*://espc.com/*"],
 		  "js":["main.js"]
 	  }
   ],
-  "icons" : {
+  "icons": {
 	  "64": "icon64.png",
 	  "128": "icon128.png"
+  },
+  "browser_specific_settings": {
+	  "gecko": {
+		  "id": "{b704c699-0ded-4cd8-b3c9-3e2470da4284}",
+		  "strict_min_version": "109.0"
+	  }
   }
 }

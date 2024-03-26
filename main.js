@@ -55,16 +55,31 @@ async function updatePropertyWithFloorArea(element) {
 	const floorArea = await getFloorAreaFromPropertyPage(url);
 
 	const infoDiv = element.getElementsByClassName("facilities")[0];
-	const newFloorAreaHtml = `<span class="opt added-floor-area">${floorArea}<span class="icon-floor_area" style="margin-left:8px"></span></span>`;
-	const floorAreaElement = createElementFromHtml(newFloorAreaHtml);
-	if (floorAreaElement == null) {
-		console.warn(`Invalid html string ${newFloorAreaHtml}`);
-		lockedElements.delete(url);
-		return;
-	}
+	const newFloorAreaElement = createFloorAreaElement(floorArea);
+	infoDiv.appendChild(newFloorAreaElement);
 
-	infoDiv.appendChild(floorAreaElement);
 	lockedElements.delete(url);
+}
+
+/**
+ * Create a html element with the given floor area.
+ * Template: `<span class="opt added-floor-area">${floorArea}<span class="icon-floor_area" style="margin-left:8px"></span></span>`
+ * @param {string} floorArea - The floor area to insert
+ * @returns {HTMLSpanElement} - The created element
+ */
+function createFloorAreaElement(floorArea) {
+	const mainSpan = document.createElement("span");
+	mainSpan.classList.add("opt");
+	mainSpan.classList.add("added-floor-area");
+	mainSpan.innerText = floorArea;
+
+	const iconSpan = document.createElement("span");
+	iconSpan.classList.add("icon-floor_area");
+	iconSpan.style.marginLeft = "8px";
+
+	mainSpan.appendChild(iconSpan);
+
+	return mainSpan;
 }
 
 /**
@@ -107,17 +122,6 @@ async function getFloorAreaFromPropertyPage(url) {
 	sessionStorage.setItem(key, floorAreaText);
 
 	return floorAreaText;
-}
-
-/**
- * Takes a HTML string and converts it into a HTMLElement
- * @param {string} htmlString - The HTML string to parse.
- * @returns {Element | null}
- */
-function createElementFromHtml(htmlString) {
-	const template = document.createElement("template");
-	template.innerHTML = htmlString.trim();
-	return template.content.firstElementChild;
 }
 
 main();
