@@ -4,8 +4,9 @@ A browser extension that displays the floor area of properties when viewing sear
 The floor area is displayed next to the number of rooms, and appears in list view, map view and grid view.  See below for an example:
 ![Example screenshot showing where the floor area is displayed](screenshots/espc-floor-area-screenshot-1.png)
 
-Install for Firefox here: https://addons.mozilla.org/en-US/firefox/addon/espc-floor-area
-Install for Chrome here: https://chromewebstore.google.com/detail/espc-floor-area/adpepflbapaamklldebghgeohhdanfdh
+Install for Firefox [here](https://addons.mozilla.org/en-US/firefox/addon/espc-floor-area)
+
+Install for Chrome [here](https://chromewebstore.google.com/detail/espc-floor-area/adpepflbapaamklldebghgeohhdanfdh)
 
 ## Building
 
