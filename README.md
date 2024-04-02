@@ -5,6 +5,7 @@ The floor area is displayed next to the number of rooms, and appears in list vie
 ![Example screenshot showing where the floor area is displayed](screenshots/espc-floor-area-screenshot-1.png)
 
 Install for Firefox here: https://addons.mozilla.org/en-US/firefox/addon/espc-floor-area
+Install for Chrome here: https://chromewebstore.google.com/detail/espc-floor-area/adpepflbapaamklldebghgeohhdanfdh
 
 ## Building
 
