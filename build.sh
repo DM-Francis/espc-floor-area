@@ -7,6 +7,7 @@ build_extension () {
     mkdir -p build/$browser
 
     cp src/main.js build/$browser/
+    cp src/spinner.css build/$browser/
     cp src/manifest-$browser.json build/$browser/manifest.json
     cp icons/* build/$browser/
 

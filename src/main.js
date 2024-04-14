@@ -1,7 +1,7 @@
 // @ts-check
 function main() {
 	const currentUrl = new URL(document.URL).pathname;
-	const actionUrls = ["/properties", "/property-for-sale", "/houses-for-sale", "/flats-for-sale"];
+	const actionUrls = ["/properties", "/property-for-sale", "/houses-for-sale", "/flats-for-sale", "/new"];
 
 	if (!actionUrls.some((url) => currentUrl.startsWith(url))) {
 		console.debug("No action required");
@@ -52,34 +52,51 @@ async function updatePropertyWithFloorArea(element) {
 	}
 	lockedElements.add(url);
 
-	const floorArea = await getFloorAreaFromPropertyPage(url);
-
 	const infoDiv = element.getElementsByClassName("facilities")[0];
-	const newFloorAreaElement = createFloorAreaElement(floorArea);
+	const newFloorAreaElement = createFloorAreaElementWithSpinner();
 	infoDiv.appendChild(newFloorAreaElement);
+
+	const floorArea = await getFloorAreaFromPropertyPage(url);
+	updateFloorAreaElementWithActualValue(newFloorAreaElement, floorArea);
 
 	lockedElements.delete(url);
 }
 
 /**
- * Create a html element with the given floor area.
- * Template: `<span class="opt added-floor-area">${floorArea}<span class="icon-floor_area" style="margin-left:8px"></span></span>`
- * @param {string} floorArea - The floor area to insert
+ * Create a html element for the floor area with a spinner
+ * Template: `<span class="opt added-floor-area"><span class="floor-area-spinner"></span><span class="icon-floor_area" style="margin-left:8px"></span></span>`
  * @returns {HTMLSpanElement} - The created element
  */
-function createFloorAreaElement(floorArea) {
+function createFloorAreaElementWithSpinner() {
 	const mainSpan = document.createElement("span");
 	mainSpan.classList.add("opt");
 	mainSpan.classList.add("added-floor-area");
-	mainSpan.innerText = floorArea;
+
+	const spinnerSpan = document.createElement("span");
+	spinnerSpan.classList.add("floor-area-spinner");
 
 	const iconSpan = document.createElement("span");
 	iconSpan.classList.add("icon-floor_area");
 	iconSpan.style.marginLeft = "8px";
 
+	mainSpan.appendChild(spinnerSpan);
 	mainSpan.appendChild(iconSpan);
 
 	return mainSpan;
+}
+
+/**
+ * Update the given floor area element with the actual retrieved floor area
+ * @param {HTMLElement} element - the element to update
+ * @param {string} floorArea - The floor area to insert
+ */
+function updateFloorAreaElementWithActualValue(element, floorArea) {
+	const spinnerSpan = element.getElementsByClassName("floor-area-spinner")[0];
+	if (spinnerSpan) {
+		element.removeChild(spinnerSpan);
+	}
+
+	element.insertAdjacentText("afterbegin", floorArea);
 }
 
 /**
