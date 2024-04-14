@@ -40,6 +40,11 @@ function updatePropertiesFromMutations(mutationList) {
  * @param {Element} parentElement - The parent element within which to update property elements.
  */
 function updatePropertiesWithFloorArea(parentElement) {
+	if (parentElement.classList.contains("propertyWrap")) {
+		updatePropertyWithFloorArea(parentElement);
+		return;
+	}
+
 	const propertyElements = parentElement.getElementsByClassName("propertyWrap");
 
 	for (const element of propertyElements) {
@@ -52,9 +57,13 @@ function updatePropertiesWithFloorArea(parentElement) {
 const lockedElements = new Set();
 
 /** Update a single property element with an icon showing floor area
- * @param {Element} element - The property Element to update
+ * @param {Element | null} element - The property Element to update
  */
 async function updatePropertyWithFloorArea(element) {
+	if (element == null) {
+		return;
+	}
+
 	let alreadyAdded = element.querySelector(".added-floor-area");
 	if (alreadyAdded) { return; }
 
@@ -63,6 +72,10 @@ async function updatePropertyWithFloorArea(element) {
 		return;
 	}
 
+	let infoDiv = element.getElementsByClassName("facilities")[0];
+	const floorAreaSpinner = createFloorAreaElementWithSpinner();
+	infoDiv.appendChild(floorAreaSpinner);
+
 	// Ensure only 1 'thread' can update this property element at a time
 	if (lockedElements.has(url)) {
 		console.debug(`Skipping, url locked: ${url}`)
@@ -70,25 +83,25 @@ async function updatePropertyWithFloorArea(element) {
 	}
 	lockedElements.add(url);
 
-	try {
-		let infoDiv = element.getElementsByClassName("facilities")[0];
-		const floorAreaSpinner = createFloorAreaElementWithSpinner();
-		infoDiv.appendChild(floorAreaSpinner);
+	const floorArea = await fetchFloorAreaFromPropertyPage(url);
 
-		const floorArea = await getFloorAreaFromPropertyPage(url);
-
-		// The info div and floor area element need to be re-found/recreated because they may have been removed while awaiting the property page.
-		const newFloorAreaElement = createFloorElementWithValue(floorArea);
-		infoDiv = element.getElementsByClassName("facilities")[0];
-		infoDiv.removeChild(floorAreaSpinner);
-		infoDiv.appendChild(newFloorAreaElement);
-
-		const stillExists = document.contains(element);
-		console.debug(`Updated element for ${url}. Element still exists: ${stillExists}.`)
-
-	} finally {
-		lockedElements.delete(url);
+	element = getPropertyElementForUrl(url); // Re-find the property element in case it has been replaced while we awaited the property page.
+	if (element == null) {
+		return;
 	}
+
+	const newFloorAreaElement = createFloorElementWithValue(floorArea);
+	infoDiv = element.getElementsByClassName("facilities")[0];
+
+	if (infoDiv.contains(floorAreaSpinner)) {
+		infoDiv.removeChild(floorAreaSpinner);
+	}
+	infoDiv.appendChild(newFloorAreaElement);
+
+	const stillExists = document.contains(element);
+	console.debug(`Updated element for ${url}. Element still exists: ${stillExists}.`)
+
+	lockedElements.delete(url);
 }
 
 /**
@@ -159,11 +172,25 @@ function getUrlFromPropertyElement(element) {
 }
 
 /**
+ * Gets the property element that matches the provided url
+ * @param {string} url
+ * @returns {Element | null}
+ */
+function getPropertyElementForUrl(url) {
+	const propertyElement = document.querySelector(`.propertyWrap:has(.infoWrap > a[href*='${url}'])`)
+	if (propertyElement == null) {
+		console.debug(`Property element not found for url: ${url}`)
+	}
+
+	return propertyElement;
+}
+
+/**
  * Fetches the property floor area from the given url.
  * @param {string} url - The url of the property page.
  * @returns {Promise<string>}
  */
-async function getFloorAreaFromPropertyPage(url) {
+async function fetchFloorAreaFromPropertyPage(url) {
 	const key = `floorarea-${url}`;
 	const fromCache = sessionStorage.getItem(key);
 	if (fromCache != null) {
