@@ -8,25 +8,42 @@ function main() {
 		return;
 	}
 
-	updatePropertiesWithFloorArea();
+	updatePropertiesWithFloorArea(document.documentElement);
 
 	const mainElement = document.getElementById("content");
 	if (mainElement == null) {
 		throw new Error("No main content element found");
 	}
 
-	const observer = new MutationObserver(() => updatePropertiesWithFloorArea());
+	const observer = new MutationObserver(mutations => updatePropertiesFromMutations(mutations));
 	const obsConfig = { childList: true, subtree: true };
 	observer.observe(mainElement, obsConfig);
 }
 
-/**
- * Updates all properties with an extra icon showing floor area
+/** Updates property elements based on a mutation list
+ * @param {MutationRecord[]} mutationList
  */
-function updatePropertiesWithFloorArea() {
-	const propertyElements = document.getElementsByClassName("propertyWrap");
+function updatePropertiesFromMutations(mutationList) {
+	for (const mutation of mutationList) {
+		for (const addedNode of mutation.addedNodes) {
+			if (addedNode.nodeType == Node.ELEMENT_NODE) {
+				const addedElement = /** @type {Element} */(addedNode);
+				console.debug(`Added: ${addedElement.outerHTML}`);
+				updatePropertiesWithFloorArea(addedElement);
+			}
+		}
+	}
+}
+
+/**
+ * Updates all properties within an element with an extra icon showing floor area
+ * @param {Element} parentElement - The parent element within which to update property elements.
+ */
+function updatePropertiesWithFloorArea(parentElement) {
+	const propertyElements = parentElement.getElementsByClassName("propertyWrap");
 
 	for (const element of propertyElements) {
+		console.debug(`Updating: ${element.outerHTML}`)
 		updatePropertyWithFloorArea(element); // Note we are not awaiting any of these updates, they will all run on the event loop in the background
 	}
 }
@@ -48,18 +65,30 @@ async function updatePropertyWithFloorArea(element) {
 
 	// Ensure only 1 'thread' can update this property element at a time
 	if (lockedElements.has(url)) {
+		console.debug(`Skipping, url locked: ${url}`)
 		return;
 	}
 	lockedElements.add(url);
 
-	const infoDiv = element.getElementsByClassName("facilities")[0];
-	const newFloorAreaElement = createFloorAreaElementWithSpinner();
-	infoDiv.appendChild(newFloorAreaElement);
+	try {
+		let infoDiv = element.getElementsByClassName("facilities")[0];
+		const floorAreaSpinner = createFloorAreaElementWithSpinner();
+		infoDiv.appendChild(floorAreaSpinner);
 
-	const floorArea = await getFloorAreaFromPropertyPage(url);
-	updateFloorAreaElementWithActualValue(newFloorAreaElement, floorArea);
+		const floorArea = await getFloorAreaFromPropertyPage(url);
 
-	lockedElements.delete(url);
+		// The info div and floor area element need to be re-found/recreated because they may have been removed while awaiting the property page.
+		const newFloorAreaElement = createFloorElementWithValue(floorArea);
+		infoDiv = element.getElementsByClassName("facilities")[0];
+		infoDiv.removeChild(floorAreaSpinner);
+		infoDiv.appendChild(newFloorAreaElement);
+
+		const stillExists = document.contains(element);
+		console.debug(`Updated element for ${url}. Element still exists: ${stillExists}.`)
+
+	} finally {
+		lockedElements.delete(url);
+	}
 }
 
 /**
@@ -68,35 +97,49 @@ async function updatePropertyWithFloorArea(element) {
  * @returns {HTMLSpanElement} - The created element
  */
 function createFloorAreaElementWithSpinner() {
-	const mainSpan = document.createElement("span");
-	mainSpan.classList.add("opt");
-	mainSpan.classList.add("added-floor-area");
+	const mainElement = createBlankFloorAreaElement();
 
 	const spinnerSpan = document.createElement("span");
 	spinnerSpan.classList.add("floor-area-spinner");
 
-	const iconSpan = document.createElement("span");
-	iconSpan.classList.add("icon-floor_area");
-	iconSpan.style.marginLeft = "8px";
+	mainElement.insertAdjacentElement("afterbegin", spinnerSpan);
 
-	mainSpan.appendChild(spinnerSpan);
-	mainSpan.appendChild(iconSpan);
-
-	return mainSpan;
+	return mainElement;
 }
 
 /**
- * Update the given floor area element with the actual retrieved floor area
- * @param {HTMLElement} element - the element to update
+ * Create a floor area element with the actual floor area value
  * @param {string} floorArea - The floor area to insert
+ * @returns {HTMLSpanElement} - THe floor area element
  */
-function updateFloorAreaElementWithActualValue(element, floorArea) {
+function createFloorElementWithValue(floorArea) {
+	const element = createBlankFloorAreaElement();
+
 	const spinnerSpan = element.getElementsByClassName("floor-area-spinner")[0];
 	if (spinnerSpan) {
 		element.removeChild(spinnerSpan);
 	}
 
 	element.insertAdjacentText("afterbegin", floorArea);
+	return element;
+}
+
+/**
+ * Create a new floor area element without a spinner or floor area value
+ * @returns {HTMLSpanElement} - The created element
+ */
+function createBlankFloorAreaElement() {
+	const mainSpan = document.createElement("span");
+	mainSpan.classList.add("opt");
+	mainSpan.classList.add("added-floor-area");
+
+	const iconSpan = document.createElement("span");
+	iconSpan.classList.add("icon-floor_area");
+	iconSpan.style.marginLeft = "8px";
+
+	mainSpan.appendChild(iconSpan);
+
+	return mainSpan;
 }
 
 /**
